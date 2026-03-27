@@ -372,4 +372,4 @@ class _EventDetailPageState extends State<EventDetailPage> {
       ),
     );
   }
-}
+}// Event detail
