@@ -284,4 +284,4 @@ class _AllEventsPageState extends State<AllEventsPage> {
       ),
     );
   }
-}
+}// All events
