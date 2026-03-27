@@ -228,4 +228,4 @@ class AdminService {
       return false;
     }
   }
-}
+}// Service admin
