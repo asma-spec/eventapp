@@ -404,4 +404,4 @@ class _SubmitButtonState extends State<_SubmitButton> {
       ),
     );
   }
-}
+}// Auth pages
