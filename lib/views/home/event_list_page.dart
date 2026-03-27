@@ -422,4 +422,4 @@ class _EventListPageState extends State<EventListPage> {
       ),
     );
   }
-}
+}// Event list
