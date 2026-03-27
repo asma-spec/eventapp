@@ -317,4 +317,4 @@ class _CreateEventPageState extends State<CreateEventPage> {
       ),
     );
   }
-}
+}// Create event
