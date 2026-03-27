@@ -3,8 +3,6 @@ import 'admin_events_page.dart';
 import 'admin_reservations_page.dart';
 import 'admin_users_page.dart';
 import 'admin_stats_page.dart';
-import '../../providers/auth_provider.dart';
-import 'package:provider/provider.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -54,4 +52,4 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
     );
   }
-}
+}// Admin
