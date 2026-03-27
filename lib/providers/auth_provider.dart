@@ -52,4 +52,4 @@ class AuthProvider extends ChangeNotifier {
     _user = null;
     notifyListeners();
   }
-}
+}// Provider auth
