@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "401348147522",
+    "project_id": "eventapp-eacc6",
+    "storage_bucket": "eventapp-eacc6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:401348147522:android:5f5c9e2176d9e6a8faf0db",
+        "android_client_info": {
+          "package_name": "com.example.eventapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0TrWq2vRTwdvVdr6-YSazIlMg6aFTd-E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
