@@ -105,4 +105,4 @@ class _MapPickerState extends State<MapPicker> {
       ),
     );
   }
-}
+}// MapPicker widget
