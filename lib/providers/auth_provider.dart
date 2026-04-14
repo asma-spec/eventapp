@@ -6,12 +6,14 @@ class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   UserModel? _user;
   bool _loading = false;
+  String? _errorMessage; // ← NOUVEAU : message d'erreur précis
 
   UserModel? get user => _user;
   bool get loading => _loading;
   bool get isLoggedIn => _user != null;
   bool get isOrganisateur => _user?.role == 'organisateur';
-  bool get isAdmin => _user?.role == 'admin'; // ✅ AJOUT
+  bool get isAdmin => _user?.role == 'admin';
+  String? get errorMessage => _errorMessage; // ← NOUVEAU
 
   Future<bool> inscription({
     required String email,
@@ -20,13 +22,22 @@ class AuthProvider extends ChangeNotifier {
     required String role,
   }) async {
     _loading = true;
+    _errorMessage = null; // reset erreur
     notifyListeners();
-    _user = await _authService.inscription(
-      email: email,
-      password: password,
-      nom: nom,
-      role: role,
-    );
+
+    try {
+      _user = await _authService.inscription(
+        email: email,
+        password: password,
+        nom: nom,
+        role: role,
+      );
+    } catch (e) {
+      // ✅ Récupère le message précis depuis AuthService
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      _user = null;
+    }
+
     _loading = false;
     notifyListeners();
     return _user != null;
@@ -37,11 +48,20 @@ class AuthProvider extends ChangeNotifier {
     required String password,
   }) async {
     _loading = true;
+    _errorMessage = null; // reset erreur
     notifyListeners();
-    _user = await _authService.connexion(
-      email: email,
-      password: password,
-    );
+
+    try {
+      _user = await _authService.connexion(
+        email: email,
+        password: password,
+      );
+    } catch (e) {
+      // ✅ Récupère le message précis depuis AuthService
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      _user = null;
+    }
+
     _loading = false;
     notifyListeners();
     return _user != null;
@@ -50,6 +70,14 @@ class AuthProvider extends ChangeNotifier {
   Future<void> deconnexion() async {
     await _authService.deconnexion();
     _user = null;
+    _errorMessage = null;
     notifyListeners();
   }
-}// Provider auth
+
+  // ✅ Réinitialiser le message d'erreur
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+}
+// Provider auth
