@@ -13,10 +13,12 @@ class _RegisterPageState extends State<RegisterPage>
     with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _nomController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String _role = 'utilisateur';
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -40,6 +42,7 @@ class _RegisterPageState extends State<RegisterPage>
     _animController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _nomController.dispose();
     super.dispose();
   }
@@ -95,7 +98,6 @@ class _RegisterPageState extends State<RegisterPage>
                         ),
                       ),
                       const SizedBox(height: 28),
-
                       Row(
                         children: [
                           Container(
@@ -141,7 +143,6 @@ class _RegisterPageState extends State<RegisterPage>
                         ],
                       ),
                       const SizedBox(height: 24),
-
                       const Text(
                         'Créer un compte ✨',
                         style: TextStyle(
@@ -177,17 +178,20 @@ class _RegisterPageState extends State<RegisterPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // ── Nom ──────────────────────────────────
                           _label('Nom complet'),
                           const SizedBox(height: 8),
                           _inputField(
                             controller: _nomController,
                             hint: 'Votre nom et prénom',
                             icon: Icons.person_outline_rounded,
-                            validator: (v) =>
-                                v!.isEmpty ? 'Entrez votre nom' : null,
+                            validator: (v) => v!.trim().isEmpty
+                                ? 'Entrez votre nom'
+                                : null,
                           ),
                           const SizedBox(height: 18),
 
+                          // ── Email ─────────────────────────────────
                           _label('Adresse email'),
                           const SizedBox(height: 8),
                           _inputField(
@@ -195,11 +199,22 @@ class _RegisterPageState extends State<RegisterPage>
                             hint: 'votre@email.com',
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
-                            validator: (v) =>
-                                v!.isEmpty ? 'Entrez votre email' : null,
+                            validator: (v) {
+                              if (v!.trim().isEmpty) {
+                                return 'Entrez votre email';
+                              }
+                              final emailRegex = RegExp(
+                                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                              );
+                              if (!emailRegex.hasMatch(v.trim())) {
+                                return 'Email invalide (ex: nom@domaine.com)';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 18),
 
+                          // ── Mot de passe ──────────────────────────
                           _label('Mot de passe'),
                           const SizedBox(height: 8),
                           _inputField(
@@ -218,9 +233,44 @@ class _RegisterPageState extends State<RegisterPage>
                                 size: 20,
                               ),
                             ),
-                            validator: (v) => v!.length < 6
-                                ? 'Minimum 6 caractères'
-                                : null,
+                            validator: (v) {
+                              if (v!.length < 6) {
+                                return 'Minimum 6 caractères';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 18),
+
+                          // ── Confirmer mot de passe ────────────────
+                          _label('Confirmer le mot de passe'),
+                          const SizedBox(height: 8),
+                          _inputField(
+                            controller: _confirmPasswordController,
+                            hint: 'Répétez votre mot de passe',
+                            icon: Icons.lock_outline_rounded,
+                            obscure: _obscureConfirmPassword,
+                            suffixIcon: GestureDetector(
+                              onTap: () => setState(() =>
+                                  _obscureConfirmPassword =
+                                      !_obscureConfirmPassword),
+                              child: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: const Color(0xFF7000FF),
+                                size: 20,
+                              ),
+                            ),
+                            validator: (v) {
+                              if (v!.isEmpty) {
+                                return 'Confirmez votre mot de passe';
+                              }
+                              if (v != _passwordController.text) {
+                                return 'Les mots de passe ne correspondent pas';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 24),
 
@@ -256,7 +306,7 @@ class _RegisterPageState extends State<RegisterPage>
                           ),
                           const SizedBox(height: 28),
 
-                          // Bouton
+                          // ── Bouton ───────────────────────────────
                           _SubmitButton(
                             label: 'Créer mon compte',
                             loading: authProvider.loading,
@@ -272,10 +322,12 @@ class _RegisterPageState extends State<RegisterPage>
                                   Navigator.pushReplacementNamed(
                                       context, '/home');
                                 } else {
+                                  // ✅ Affiche le message d'erreur précis
+                                  final erreur = authProvider.errorMessage ??
+                                      'Erreur lors de l\'inscription';
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Erreur lors de l\'inscription'),
+                                    SnackBar(
+                                      content: Text(erreur),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
@@ -351,7 +403,8 @@ class _RegisterPageState extends State<RegisterPage>
       style: const TextStyle(fontSize: 15, color: Color(0xFF1B003A)),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
+        hintStyle:
+            const TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
         prefixIcon: Icon(icon, color: const Color(0xFF7000FF), size: 20),
         suffixIcon: suffixIcon != null
             ? Padding(
@@ -372,7 +425,8 @@ class _RegisterPageState extends State<RegisterPage>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF7000FF), width: 2),
+          borderSide:
+              const BorderSide(color: Color(0xFF7000FF), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -473,7 +527,9 @@ class _RoleCard extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
-                color: selected ? Colors.white : const Color(0xFF1B003A),
+                color: selected
+                    ? Colors.white
+                    : const Color(0xFF1B003A),
               ),
             ),
             const SizedBox(height: 3),
