@@ -10,7 +10,6 @@ class AuthService {
     databaseURL: 'https://eventapp-eacc6-default-rtdb.europe-west1.firebasedatabase.app',
   );
 
-  // ✅ Email admin unique
   static const String adminEmail = 'admin@gmail.com';
 
   Future<UserModel?> inscription({
@@ -30,6 +29,7 @@ class AuthService {
         email: email,
         password: password,
       );
+
       UserModel user = UserModel(
         uid: result.user!.uid,
         email: email,
@@ -37,11 +37,31 @@ class AuthService {
         role: role,
         billetGratuit: false,
       );
+
       await _database.ref('users/${result.user!.uid}').set(user.toJson());
       return user;
+
+    } on FirebaseAuthException catch (e) {
+      // ✅ Gestion précise des erreurs Firebase Auth
+      switch (e.code) {
+        case 'email-already-in-use':
+          print('Erreur : cet email est déjà utilisé');
+          throw Exception('Cet email est déjà associé à un compte existant');
+        case 'invalid-email':
+          print('Erreur : format email invalide');
+          throw Exception('Le format de l\'email est invalide');
+        case 'weak-password':
+          print('Erreur : mot de passe trop faible');
+          throw Exception('Le mot de passe est trop faible');
+        case 'network-request-failed':
+          throw Exception('Pas de connexion internet');
+        default:
+          print('Erreur inscription Firebase: ${e.code}');
+          throw Exception('Erreur lors de l\'inscription : ${e.message}');
+      }
     } catch (e) {
       print('Erreur inscription: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -55,7 +75,7 @@ class AuthService {
         password: password,
       );
 
-      // ✅ Si c'est l'admin, retourner un UserModel admin sans passer par la DB
+      // ✅ Si c'est l'admin
       if (email.trim().toLowerCase() == adminEmail) {
         return UserModel(
           uid: result.user!.uid,
@@ -71,9 +91,28 @@ class AuthService {
           .get();
       return UserModel.fromJson(
           Map<String, dynamic>.from(snapshot.value as Map));
+
+    } on FirebaseAuthException catch (e) {
+      // ✅ Gestion précise des erreurs de connexion
+      switch (e.code) {
+        case 'user-not-found':
+          throw Exception('Aucun compte trouvé avec cet email');
+        case 'wrong-password':
+          throw Exception('Mot de passe incorrect');
+        case 'invalid-email':
+          throw Exception('Format email invalide');
+        case 'user-disabled':
+          throw Exception('Ce compte a été désactivé');
+        case 'too-many-requests':
+          throw Exception('Trop de tentatives, réessayez plus tard');
+        case 'network-request-failed':
+          throw Exception('Pas de connexion internet');
+        default:
+          throw Exception('Erreur de connexion : ${e.message}');
+      }
     } catch (e) {
       print('Erreur connexion: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -83,7 +122,6 @@ class AuthService {
 
   User? get currentUser => _auth.currentUser;
 
-  // ✅ Initialiser le compte admin dans Firebase Auth (à appeler une seule fois)
   Future<void> initialiserCompteAdmin() async {
     try {
       await _auth.createUserWithEmailAndPassword(
@@ -92,7 +130,6 @@ class AuthService {
       );
       print('Compte admin créé avec succès');
     } catch (e) {
-      // Déjà existant, pas de problème
       print('Compte admin déjà existant ou erreur: $e');
     }
   }
