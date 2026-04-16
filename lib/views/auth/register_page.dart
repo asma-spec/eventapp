@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/otp_service.dart';
+import 'otp_verification_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -19,6 +21,7 @@ class _RegisterPageState extends State<RegisterPage>
   String _role = 'utilisateur';
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _sendingOtp = false;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -47,10 +50,42 @@ class _RegisterPageState extends State<RegisterPage>
     super.dispose();
   }
 
+  Future<void> _envoyerOtpEtContinuer() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _sendingOtp = true);
+
+    bool envoye = await OtpService.envoyerCode(
+      email: _emailController.text.trim(),
+      nom: _nomController.text.trim(),
+    );
+
+    setState(() => _sendingOtp = false);
+
+    if (envoye) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OtpVerificationPage(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+            nom: _nomController.text.trim(),
+            role: _role,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de l\'envoi du code. Vérifiez votre email.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-
     return Scaffold(
       backgroundColor: const Color(0xFFF5F0FF),
       body: SafeArea(
@@ -233,12 +268,9 @@ class _RegisterPageState extends State<RegisterPage>
                                 size: 20,
                               ),
                             ),
-                            validator: (v) {
-                              if (v!.length < 6) {
-                                return 'Minimum 6 caractères';
-                              }
-                              return null;
-                            },
+                            validator: (v) => v!.length < 6
+                                ? 'Minimum 6 caractères'
+                                : null,
                           ),
                           const SizedBox(height: 18),
 
@@ -307,33 +339,12 @@ class _RegisterPageState extends State<RegisterPage>
                           const SizedBox(height: 28),
 
                           // ── Bouton ───────────────────────────────
+                          // ✅ context.read au lieu de watch
+                          // ✅ loading = seulement _sendingOtp
                           _SubmitButton(
                             label: 'Créer mon compte',
-                            loading: authProvider.loading,
-                            onTap: () async {
-                              if (_formKey.currentState!.validate()) {
-                                bool success = await authProvider.inscription(
-                                  email: _emailController.text.trim(),
-                                  password: _passwordController.text.trim(),
-                                  nom: _nomController.text.trim(),
-                                  role: _role,
-                                );
-                                if (success) {
-                                  Navigator.pushReplacementNamed(
-                                      context, '/home');
-                                } else {
-                                  // ✅ Affiche le message d'erreur précis
-                                  final erreur = authProvider.errorMessage ??
-                                      'Erreur lors de l\'inscription';
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(erreur),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
+                            loading: _sendingOtp,
+                            onTap: _envoyerOtpEtContinuer,
                           ),
                           const SizedBox(height: 24),
 
@@ -345,7 +356,8 @@ class _RegisterPageState extends State<RegisterPage>
                                 text: const TextSpan(
                                   text: 'Déjà un compte ?  ',
                                   style: TextStyle(
-                                      color: Color(0xFF888888), fontSize: 14),
+                                      color: Color(0xFF888888),
+                                      fontSize: 14),
                                   children: [
                                     TextSpan(
                                       text: 'Se connecter',
@@ -353,8 +365,10 @@ class _RegisterPageState extends State<RegisterPage>
                                         color: Color(0xFF7000FF),
                                         fontWeight: FontWeight.w700,
                                         fontSize: 14,
-                                        decoration: TextDecoration.underline,
-                                        decorationColor: Color(0xFF7000FF),
+                                        decoration:
+                                            TextDecoration.underline,
+                                        decorationColor:
+                                            Color(0xFF7000FF),
                                       ),
                                     ),
                                   ],
@@ -405,7 +419,8 @@ class _RegisterPageState extends State<RegisterPage>
         hintText: hint,
         hintStyle:
             const TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
-        prefixIcon: Icon(icon, color: const Color(0xFF7000FF), size: 20),
+        prefixIcon:
+            Icon(icon, color: const Color(0xFF7000FF), size: 20),
         suffixIcon: suffixIcon != null
             ? Padding(
                 padding: const EdgeInsets.only(right: 12),
@@ -527,9 +542,8 @@ class _RoleCard extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
-                color: selected
-                    ? Colors.white
-                    : const Color(0xFF1B003A),
+                color:
+                    selected ? Colors.white : const Color(0xFF1B003A),
               ),
             ),
             const SizedBox(height: 3),
